@@ -461,7 +461,15 @@ async def wait_for_approval_from_org(message, ctx):
             print("Confirmed")
             return(True)
 
-            
+@bot.command()
+async def become_org(ctx):
+    role = discord.utils.get(ctx.guild.roles, name=organiser_role)
+    if role:
+        await ctx.author.add_roles(role)
+        await ctx.send(f"{ctx.author.mention} is now assigned to {organiser_role}")
+    else:
+        await ctx.send("Role doesn't exist")
+
 def day_number_to_text(day_int : int):
     if day_int > 15:
         return f"OT {day_int - 15}"

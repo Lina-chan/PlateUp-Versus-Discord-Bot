@@ -1,11 +1,15 @@
-# Python-Discord-Bot
+# PlateUp-Versus-Discord_Bot
 
+A discord bot to help run the unofficial Versus events for PlateUp game.
 
-# Event setup example
+# List of commands
 
 ## For organiser:
 
-Start an event in youtr private channel with the bot.
+Get the  role:
+```!become_org```
+
+Start an event in your **private channel** with the bot.
 Create a set number of teams with provided names. Events are limited by 1 per server.
 
 ```!start_event 2 "Team 1;Team 2"```
@@ -20,6 +24,8 @@ Set which symbols you are  going to use for each team during the event. The orde
 
 Create a poll in the following channel id:
 
+If  you don't know chat's id - right-click and copy. 
+
 ```!create_teams_poll 1484939282442354689```
 
 Send data about the day. First goes result - "Success", "Queue" or team name if they lost. Then specify symbols for each customer served.
@@ -30,7 +36,7 @@ Remove channels and roles created for the event
 
 ```!delete_event_channels```
 
-Finsish event and delete data
+Finish event and delete data
 
 ```!stop_event```
 
@@ -39,6 +45,8 @@ Exclude a team after they loose.
 ```!exclude_team "Team 1"```
 
 ## For participants:
+
+Use commands only from team chat!
 
 Vote for left or right card.
 
