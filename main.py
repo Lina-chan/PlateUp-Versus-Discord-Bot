@@ -7,6 +7,8 @@ import copy
 import pandas as pd
 import asyncio
 
+from  translations import *
+
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
 
@@ -18,9 +20,21 @@ intents.reactions = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-organiser_role = "Organiser"
+organiser_role = "Moderator" #The role that's allowed to do the setup
 customer_cost = 2
 queue_max_failures = 3
+
+emojis_list = [ #Used for reaction roles. Numbers  1-9 for now.
+    '1️⃣',
+    '2️⃣',
+    '3️⃣',
+    '4️⃣',
+    '5️⃣',
+    '6️⃣',
+    '7️⃣',
+    '8️⃣',
+    '9️⃣'
+]
 
 ongoing_events ={}
 
@@ -45,33 +59,24 @@ event_data_template = {
     "teams_data" : teams_data_template,
     }
 
-emojis_list = [
-    '1️⃣',
-    '2️⃣',
-    '3️⃣',
-    '4️⃣',
-    '5️⃣',
-    '6️⃣',
-    '7️⃣',
-    '8️⃣',
-    '9️⃣'
-]
+
 
 
 @bot.command()
 @commands.has_role(organiser_role)
-async def start_event(ctx, number_of_teams : int, team_names : str):
+async def start_event(ctx, number_of_teams : int, team_names : str, language : str = "RU"):
     print("Start!")
     guild = ctx.guild
     print(guild)
     old_event = ongoing_events.get(guild)
     if old_event != None:
-        await ctx.send("Event already started")
+        await ctx.send(event_started_text(language))
         print("Event already started")
         return
     ongoing_events[ctx.guild] = copy.deepcopy(event_data_template)
     team_names_list = team_names.split(";")
     ongoing_events[guild]["teams_list"] = team_names_list
+    ongoing_events[guild]["language"] = language
     allowed_results = team_names_list +["Queue","Success"] 
     ongoing_events[guild]["allowed_results"] = allowed_results
     ongoing_events[guild]["org_channel"] = ctx.channel
@@ -81,8 +86,7 @@ async def start_event(ctx, number_of_teams : int, team_names : str):
         print(f"{team_names_list[i]} done")
 
     pretty_print_df(ongoing_events[guild]["teams_data"])
-    await ctx.send(f"Event started! Registered teams are the  following:\n{"\n".join(team_names_list)}")
-        
+    await ctx.send(registartion_text(language, team_names_list))     
         
 def create_team(_name, _guild):
     print(_name)
@@ -102,16 +106,19 @@ def create_team(_name, _guild):
     print("Data Added")
 
 
+
+
 @bot.command()
 @commands.has_role(organiser_role)
 async def create_event_channels(ctx, event_category_name : str):
     guild = ctx.guild
     current_event = ongoing_events.get(guild)
-    cat = discord.utils.get(guild.categories, name=event_category_name)
     if current_event == None:
-        await ctx.send("No event")
-        print("No event")
+        await ctx.send("No event!")
+        print("No event!")
         return
+    language = ongoing_events[guild]["language"]
+    cat = discord.utils.get(guild.categories, name=event_category_name)
     teams_list = current_event["teams_list"]
     teams_df = ongoing_events[guild]["teams_data"]
     team_channel_mapping = {}
@@ -120,6 +127,7 @@ async def create_event_channels(ctx, event_category_name : str):
         role = await guild.create_role(name=team_name)
         print(f"role created {team_name}")
         txt_channel = await guild.create_text_channel(name=team_name,  category = cat, reason = "VS event")
+        await txt_channel.send(teams_instruction_text(language))
         print(f"chat created {team_name}")
         team_channel_mapping[txt_channel] = team_name
         voice_channel = await guild.create_voice_channel(name=team_name,  category = cat, reason = "VS event")
@@ -134,8 +142,7 @@ async def create_event_channels(ctx, event_category_name : str):
         teams_df.loc[i, 'text_chat'] = txt_channel
         teams_df.loc[i, 'voice_chat'] = voice_channel
     ongoing_events[guild]["team_channel_mapping"] = team_channel_mapping
-    await ctx.send("Done")
-
+    await ctx.send(command_done_text(language))  
 
 @bot.command()
 @commands.has_role(organiser_role)
@@ -143,13 +150,14 @@ async def delete_event_channels(ctx):
     guild = ctx.guild
     current_event = ongoing_events.get(guild)
     if current_event == None:
-        await ctx.send("No event")
-        print("No event")
+        await ctx.send("No event!")
+        print("No event!")
         return
+    language = ongoing_events[guild]["language"]
     teams_data = ongoing_events[guild]["teams_data"]
     for team in ongoing_events[guild]["teams_list"]:
         team_index = teams_data.loc[teams_data["name"] == team].index.tolist()[0]
-        tc = teams_data.loc[team_index, 'text_chat'] #Needs see  channel permission
+        tc = teams_data.loc[team_index, 'text_chat'] #Needs see channel permission
         vc = teams_data.loc[team_index, 'voice_chat'] #Needs connect permission
         role = teams_data.loc[team_index, 'role']
         await tc.delete()
@@ -158,7 +166,7 @@ async def delete_event_channels(ctx):
         print(f"voice chat deleted {team}")
         await role.delete()
         print(f"role deleted {team}")
-    await ctx.send("Roles and channels deleted")
+    await ctx.send(command_done_text(language))
 
 @bot.command()
 @commands.has_role(organiser_role)
@@ -168,14 +176,15 @@ async def stop_event(ctx):
     if old_event != None:
         print("Stopping event")
         guild = ctx.guild
+        language = ongoing_events[guild]["language"]
         teams_voting_message = ongoing_events[guild].get("teams_voting_message")
         if teams_voting_message != None:
             await teams_voting_message.delete()
         del ongoing_events[guild]
-        await ctx.send("Event stopped")
+        await ctx.send(event_stopped(language))
         return
     print("Nothing to stop")
-    await ctx.send("No event")
+    await ctx.send("No event to stop")
 
 @bot.command()
 @commands.has_role(organiser_role)
@@ -183,13 +192,11 @@ async def create_teams_poll(ctx, channel_id : int):
     guild = ctx.guild
     current_event = ongoing_events.get(guild)   
     if current_event == None:
-        await ctx.send("No event")
-        print("No event")
+        await ctx.send("No event!")
+        print("No event!")
         return
-    if current_event['language'] == "RU":
-        message_main_text = "Используйте реакции чтобы получить  роль на текущий ивент!"
-    else:
-        message_main_text = "Use reactions to get roles for this event!"
+    language = ongoing_events[guild]["language"]
+    message_main_text = roll_for_reaction_roles_text(language)
     channel = bot.get_channel(channel_id)
     emojis_dict = {}
     teams_data = ongoing_events[guild]["teams_data"]
@@ -197,7 +204,7 @@ async def create_teams_poll(ctx, channel_id : int):
         team =  ongoing_events[guild]["teams_list"][i]
         team_index = teams_data.loc[teams_data["name"] == team].index.tolist()[0]
         emojis_dict[emojis_list[i]] = teams_data.loc[team_index, 'role']
-        voting_text = f"\n{team}: {emojis_list[i]}"
+        voting_text = f"\n{emojis_list[i]} : {team}"
         message_main_text = message_main_text + voting_text
     teams_voting_message = await channel.send(message_main_text)
 
@@ -205,7 +212,22 @@ async def create_teams_poll(ctx, channel_id : int):
         await teams_voting_message.add_reaction(emoji)
     ongoing_events[guild]["teams_voting_message"] = teams_voting_message
     ongoing_events[guild]["emojis_dict"] = emojis_dict
-    await ctx.send("Done!")
+    await ctx.send(command_done_text(language))  
+
+@bot.command()
+async def help_team(ctx):
+    current_event = ongoing_events.get(ctx.guild) 
+    if current_event == None:
+        await ctx.send("No event!")
+        print("No event!")
+        ctx.send(teams_instruction_text("ENG"))
+    language = current_event["language"]
+    await ctx.send(teams_instruction_text(language))
+
+@bot.command()
+@commands.has_role(organiser_role)
+async def help_org(ctx):
+    await ctx.send(org_instruction_text())
 
 @bot.event
 async def on_reaction_add(reaction, user):
@@ -248,14 +270,15 @@ async def set_team_symbols(ctx, symbols_string : str):
     current_event = ongoing_events.get(guild)   
     if current_event == None:
         return
+    language = ongoing_events[guild]["language"]
     teams = current_event["teams_list"]
     if len(symbols_string) != len(teams):
-        await ctx.send("Error! String does not match number of teams!")
+        await ctx.send(set_team_symbols_error_text(language))
         return
     symbols = list(symbols_string)
     symbols_dictionary = dict(zip(teams, symbols))
     ongoing_events[guild]["symbols_dictionary"] = symbols_dictionary
-    message_main_text = "Saved!\nMapping results: "
+    message_main_text = set_team_symbols_success_text(language)
     for i in range(len(teams)):
         voting_text = f"\n{teams[i]}: {symbols[i]}"
         message_main_text = message_main_text + voting_text
@@ -268,9 +291,10 @@ async def exclude_team(ctx, team : str):
     current_event = ongoing_events.get(guild)   
     if current_event == None:
         return
+    language = ongoing_events[guild]["language"]
     if team not in current_event['teams_list']:
-        await ctx.send(f"Wrong team name!")
-    confirmation = await ctx.send(f"Are you sure you want to exclude team {team}?")
+        await ctx.send(wrong_team_name_text(language))
+    confirmation = await ctx.send(exclude_team_confirmation_text(language, team))
     if await wait_for_approval_from_org(confirmation, ctx):
         teams_data = current_event["teams_data"]
         team_index = teams_data.loc[teams_data["name"] == team].index.tolist()[0]
@@ -280,10 +304,10 @@ async def exclude_team(ctx, team : str):
         await role.delete()
         await txt_channel.delete()
         await voice_channel.delete()
-        await ctx.send("Roles and channels deleted")
+        await ctx.send(command_done_text(language))
         current_event['teams_list'].remove(team)
 
-    
+
 @bot.command()
 @commands.has_role(organiser_role)
 async def send_day_data(ctx, result :str, symbols_string : str):
@@ -291,6 +315,7 @@ async def send_day_data(ctx, result :str, symbols_string : str):
     current_event = ongoing_events.get(guild)   
     if current_event == None:
         return
+    language = ongoing_events[guild]["language"]
     teams = current_event["teams_list"]
     if len(symbols_string) == 0 or len(result) == 0:
         await ctx.send("Error! Did not get full data")
@@ -314,6 +339,11 @@ async def send_day_data(ctx, result :str, symbols_string : str):
         await ctx.send("Confirmed. Processing...")
         teams_data = current_event["teams_data"]
         day_number_text = day_number_to_text(ongoing_events[guild]["current_day"])
+        for team in teams:
+            team_index = teams_data.loc[teams_data["name"] == team].index.tolist()[0]
+            teams_data.loc[team_index, 'customers_served_total'] = teams_data.loc[team_index, 'customers_served_total'] + calc_results[team]
+            teams_data.loc[team_index, 'customers_served_today'] = calc_results[team]
+        
         match result:
             case "Queue":
                 ongoing_events[guild]["queue_failures"] = ongoing_events[guild]["queue_failures"] + 1
@@ -324,37 +354,25 @@ async def send_day_data(ctx, result :str, symbols_string : str):
                 cur_day = ongoing_events[guild]["current_day"] + 1
                 ongoing_events[guild]["current_day"] = cur_day
                 day_number_text = day_number_to_text(cur_day)
-                for team in teams:
-                    team_index = teams_data.loc[teams_data["name"] == team].index.tolist()[0]
-                    teams_data.loc[team_index, 'current_gold'] = teams_data.loc[team_index, 'current_gold'] + customer_cost*calc_results[team]
-                    teams_data.loc[team_index, 'customers_served_total'] = teams_data.loc[team_index, 'customers_served_total'] + calc_results[team]
-                    teams_data.loc[team_index, 'customers_served_today'] = calc_results[team]
+                teams_data['current_gold'] = teams_data['current_gold'] + teams_data['customers_served_today']*customer_cost
                 day_result = "Успех"
             case _:
-                teams_data.loc[teams_data['name'] == result, "failures"] = teams_data.loc[teams_data['name'] == result, "failures"] + 1
-                if teams_data.loc[teams_data['name'] == result, "failures"] ==3:
+                team_index = teams_data.loc[teams_data["name"] == result].index.tolist()[0]
+                teams_data.loc[team_index, "failures"] = teams_data.loc[team_index, "failures"] + 1
+                if teams_data.loc[team_index, "failures"] == 3:
                     await ctx.send(f"Team {result} lost, kick em out!")
                 day_result = f"Проигрыш команды {result}"
         ongoing_events[guild]["teams_data"] = teams_data
 
-        
         for team in teams:
             team_index = teams_data.loc[teams_data["name"] == team].index.tolist()[0]
-            day_results_text = f"""__Команда **{teams_data.loc[team_index, 'name']}**__
-
-Результат прошлого дня — **{day_result}**, текущий день — **День {day_number_text}**.
-**{teams_data.loc[team_index, 'customers_served_today']}** клиентов вы обслужили за сегодня, итого {teams_data.loc[team_index, 'customers_served_total']} покупателей за все время.
-Вы допустили **{teams_data.loc[team_index, "failures"]}** проигрышей по своей вине и **{ongoing_events[guild]["queue_failures"]}** проигрышей из-за очереди.
-У вас сейчас **{teams_data.loc[team_index, 'current_gold']}** золота, которое можно потратить на голосование за карты и получение чертежей.
-"""
+            day_results_text = day_results_text(language, team, ongoing_events[guild])
             channel = teams_data.loc[team_index, 'text_chat']
-            await channel.send(day_results_text)
+            await channel.send(day_results_text(language, team, current_event, day_result, day_number_text))
         await ctx.send("Notifications sent!")
-        await ctx.send(f"""__**Результаты**__
+        await ctx.send(day_total_text(language, current_event, day_result, day_number_text))
 
-Результат прошлого дня — **{day_result}**, текущий день — **День {day_number_text}**.
-Всего **{ongoing_events[guild]["queue_failures"]}** проигрышей из-за очереди.
-**{len(teams)}** команд в игре.""")
+
 
 @bot.command()
 async def vote(ctx, vote_coins :int, vote_how : str):
@@ -362,6 +380,7 @@ async def vote(ctx, vote_coins :int, vote_how : str):
     current_event = ongoing_events.get(guild)   
     if current_event == None:
         return
+    language = ongoing_events[guild]["language"]
     team_channel_mapping = ongoing_events[guild]["team_channel_mapping"]
     team = team_channel_mapping.get(ctx.channel)
     print(team)
@@ -392,10 +411,9 @@ async def vote(ctx, vote_coins :int, vote_how : str):
         new_gold = teams_data.loc[team_index,'current_gold'] - vote_coins
         teams_data.loc[team_index,'current_gold'] = new_gold
         ongoing_events[guild]["teams_data"] = teams_data
-        await ctx.send(f"Подтверждено! Теперь у вас {new_gold} монет")
+        await ctx.send(f"Теперь у вас {new_gold} монет")
     else:
         org_message.delete()
-        await ctx.send("Отклонено")
 
 @bot.command()    
 async def buy(ctx, buy_coins :int, buy_what : str):
@@ -403,6 +421,7 @@ async def buy(ctx, buy_coins :int, buy_what : str):
     current_event = ongoing_events.get(guild)   
     if current_event == None:
         return
+    language = ongoing_events[guild]["language"]
     team_channel_mapping = ongoing_events[guild]["team_channel_mapping"]
     team = team_channel_mapping.get(ctx.channel)
     print(team)
@@ -434,10 +453,9 @@ async def buy(ctx, buy_coins :int, buy_what : str):
         new_gold = teams_data.loc[team_index,'current_gold'] - buy_coins
         teams_data.loc[team_index,'current_gold'] = new_gold
         ongoing_events[guild]["teams_data"] = teams_data
-        await ctx.send(f"Подтверждено! Теперь у вас {new_gold} монет")
+        await ctx.send(f"Теперь у вас {new_gold} монет")
     else:
         org_message.delete()
-        await ctx.send("Отклонено")  
 
 
 async def wait_for_approval_from_org(message, ctx):
@@ -455,20 +473,21 @@ async def wait_for_approval_from_org(message, ctx):
     else:
         if str(reaction.emoji) != '👍':
             print("Declined")
-            await ctx.send("Declined")
+            await ctx.send(declined_text())
             return False
         else:
-            print("Confirmed")
+            await ctx.send(confirmed_text())
             return(True)
 
-@bot.command()
-async def become_org(ctx):
-    role = discord.utils.get(ctx.guild.roles, name=organiser_role)
-    if role:
-        await ctx.author.add_roles(role)
-        await ctx.send(f"{ctx.author.mention} is now assigned to {organiser_role}")
-    else:
-        await ctx.send("Role doesn't exist")
+
+# @bot.command()
+# async def become_org(ctx):
+#     role = discord.utils.get(ctx.guild.roles, name=organiser_role)
+#     if role:
+#         await ctx.author.add_roles(role)
+#         await ctx.send(f"{ctx.author.mention} is now assigned to {organiser_role}")
+#     else:
+#         await ctx.send("Role doesn't exist")
 
 def day_number_to_text(day_int : int):
     if day_int > 15:
@@ -476,10 +495,10 @@ def day_number_to_text(day_int : int):
     else:
         return str(day_int)
 
-@bot.command()
-async def hello(ctx):
-    print("Hello")
-    await ctx.send(f"Hello {ctx.author.mention} from {ctx.guild}!")
+# @bot.command()
+# async def hello(ctx):
+#     print("Hello")
+#     await ctx.send(f"Hello {ctx.author.mention} from {ctx.guild}!")
 
 @start_event.error
 async def start_event_error(ctx, error):
