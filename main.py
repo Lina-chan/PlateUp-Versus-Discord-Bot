@@ -260,7 +260,7 @@ async def create_event_channels(ctx, event_category_name : str):
 
 @bot.command()
 @commands.has_role(host_role)
-async def create_teams_poll(ctx, channel_id : int):
+async def create_teams_poll(ctx, channel_id : int = 1477570759864881294):
     guild = ctx.guild
     current_event = ongoing_events.get(guild)   
     if current_event == None:
@@ -285,7 +285,7 @@ async def create_teams_poll(ctx, channel_id : int):
     ongoing_events[guild]["emojis_dict"] = emojis_dict
     await ctx.send(command_done_text())  
 
-@bot.command()
+@bot.command(description="show instruction how to interract with the bot")
 async def help_team(ctx):
     current_event = ongoing_events.get(ctx.guild) 
     if current_event == None:
@@ -294,14 +294,14 @@ async def help_team(ctx):
         ctx.send(teams_instruction_text())
     await ctx.send(teams_instruction_text())
 
-@bot.command()
+@bot.command(description="show host's instruction how to interract with the bot")
 @commands.has_role(host_role)
 async def help_host(ctx):
     await ctx.send(host_instruction_text_p1())
     await ctx.send(host_instruction_text_p2())
     await ctx.send(host_instruction_text_p3())
 
-@bot.command()
+@bot.command(description="показать инструкцию для хоста на русском")
 @commands.has_role(host_role)
 async def help_host_ru(ctx):
     await ctx.send(host_instruction_text_ru_p1())
@@ -454,8 +454,8 @@ async def clear(ctx):
         await ctx.send("On it, boss!")
         await ctx.channel.purge(limit=100)
 
-@bot.command()
-async def vote(ctx, vote_gold :int, vote_how : str):
+@bot.command(description="send your team's vote about which card to choose to the host")
+async def vote(ctx, vote_gold :int, vote_how : str = "None"):
     guild = ctx.guild
     current_event = ongoing_events.get(guild)   
     if current_event == None:
@@ -494,8 +494,8 @@ async def vote(ctx, vote_gold :int, vote_how : str):
     #else:
         #host_message.delete()
 
-@bot.command()    
-async def buy(ctx, buy_gold :int, buy_what : str):
+@bot.command(description="send your team's request to buy blueprints")    
+async def buy(ctx, buy_gold :int, buy_what : str = "None"):
     guild = ctx.guild
     current_event = ongoing_events.get(guild)   
     if current_event == None:

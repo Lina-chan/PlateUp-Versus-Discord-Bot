@@ -158,116 +158,94 @@ There were **{int(queue_failures)}** Queue Failures in total.
 ## Instructions
 
 def teams_instruction_text():
-    return f"""# Use commands from your team's chat!
-## Vote for left or right card!
-`!vote gold _to_vote "for which card"` For example,
-```!vote 20 "left"```
-To not vote and save money:
-```!vote 0 0```
-## Buy blueprints!
-`!buy gold _spent "what to buy"` For example,
+    return f"""## Use commands from your team's chat!
+**Vote for left or right card!** `!vote gold_to_vote "for which card"` For example,
+```!vote 20 "left card"```
+**To abstain from voting**:
+```!vote 0```
+**Buy blueprints!** `!buy gold_spent "what to buy"` For example,
 ```!buy 20 "table and cabinet"```
-To skip buying phase:
-```!buy 0 0```    
+**To skip buying phase**:
+```!buy 0```    
     
-# Используйте команды из своего чата!
-## Голосуйте за левую или правую карточку
-`!vote сколько_монет_поставить "за какую карточку"` Например:
+## Используйте команды из своего чата!
+**Голосуйте за левую или правую карточку!** `!vote сколько_монет_поставить "за какую карточку"` Например:
 ```!vote 20 "за левую"```
-Чтобы воздержаться от голосования:
-```!vote 0 0```
-## Покупайте схемы!
-`!buy на_сколько_монет "что купить"` Например:
+Чтобы **воздержаться от голосования**:
+```!vote 0```
+**Покупайте схемы!** `!buy на_сколько_монет "что купить"` Например:
 ```!buy 20 "стол и шкаф"```
-Чтобы ничего не покупать:
-```!buy 0 0```""" 
+Чтобы **ничего не покупать**:
+```!buy 0```""" 
 
 def host_instruction_text_p1():
     return """## Preparations   
-### Start an event in the #versus-gamehost chat with the bot.
-Create a set number of teams with provided names. Events are currently limited by 1 per server.
-```!start_event number_of_teams "name 1;name 2;..."```
-For example, 
-```!start_event 5 "Team Red;Team Blue;Team Green;Team Yellow;Team Orange"```
-### Assign channels from the  server to the teams:
-```!use_default_channels```
-### Set symbols
-Set which symbols you are going to use for each team during the event. The order should be the same as when starting event
-```!set_team_symbols "rbgyo"```
-### Manage roles
-If you want to remove all users from team roles, use this command. 
-```!clean_up_roles```
-If you want - create a poll in the specified channel id. If  you don't know chat's id - right-click and copy. 
+**1.Start an event in the #versus-gamehost chat with the bot.**
+Create a set number of teams with provided names. Events are currently limited by 1 per server.`!start_event number_of_teams "name 1;name 2;..."` For example, ```!start_event 5 "Team Red;Team Blue;Team Green;Team Yellow;Team Orange"```
+**2.Assign channels from the server to the teams**:```!use_default_channels```
+**3.Set symbols**
+Set which symbols you are going to use for each team during the event. The order should be the same as when starting event```!set_team_symbols "rbgyo"```
+**4.Clean up old roles**
+If you want to remove all users from team roles, use this command. ```!clean_up_roles```
+**5.Assign new roles**
+You can assign roles  manually or create a poll in the specified channel id with ```!create_teams_poll``` command. If you don't know chat's id - right-click and copy. The default id is versus-general chat.
 ```!create_teams_poll 1477570759864881294```"""
 
 def host_instruction_text_p2():
     return """## Running the game
-### Send data about the day. 
-First goes result - "Success", "Queue" or team name if they failed the day. Then specify symbols for each customer served.
-Don't forget to include bonus customers awarded.
-```!send_day_data "Success" "1212121222222"```
-### Exclude a team after they loose. They will not get notifications after day ends anymore.
+**1.Send data about the day.**
+Use `!send_day_data result team_symbols_for_the_day`. First goes result - "Success", "Queue" or "Team name" if they failed the day. Then specify symbols for each customer served. Don't forget to include bonus customers awarded.
+```!send_day_data "Success" "rbgyorbgyorbgyorrrbbbyyyooo"```
+**2.Exclude a team after they loose.** They will not get notifications after day ends anymore. Their data in the bot is still saved.
 ```!exclude_team "Team 1"```
-### Get notifications about votes and purchases from the teams. 
+**3.Get notifications about votes and purchases from the teams.** 
 React to each of them to approve or decline requests. You have 10 minutes to react. If this times runs out, request is considered declined.
-### If something  goes wrong - change the data.
-with `adjust_team_data` and `set_team_data` you can manually change the data, which bot has for the specified team.
-You can edit following fields: current_gold, customers_served_total, failures.
-For example, `!adjust_team_data "Team Red" current_gold -3` will reduce team Red's gold by 3.
-Or `!set_team_data "Team Blue" current_gold 20` will change current gold of team Blue to 20."""
+
+**4.If something goes wrong - you can always change the data.**
+With `adjust_team_data` and `set_team_data` you can manually change the data, which bot has for the specified team. You can edit following fields: current_gold, customers_served_total, failures.
+For example, `!adjust_team_data "Team Red" current_gold -3` will reduce team Red's gold by 3. ```!adjust_team_data "Team Red" current_gold -3```
+Or `!set_team_data "Team Blue" current_gold 20` will change current gold of team Blue to 20. ```!set_team_data "Team Blue" current_gold 20```"""
 
 def host_instruction_text_p3():
     return """## Finish the event
-### Calculate the results! `!get_game_results`
-### Clean up text channels. 
-Use `!clear` command in each of them. Only works in #versus-gamehost and #versus-team<color> channels. It can't delete more than 100 messages at a time.
-### Finish event and delete data about it in the bot.
+**1.Calculate the results!** ```!get_game_results```
+**2.Clean up text channels.**
+Use `!clear` command in each of them. Only works in #versus-gamehost and #versus-team<color> channels. It can't delete more than 100 messages at a time. ```!clear```
+**3.Finish the event** and delete data about it in the bot:
 ```!stop_event```
 ### That's it! Thank you for your hard work =)
 """
 
 def host_instruction_text_ru_p1():
     return """## Приготовления   
-### Начни ивент в чате #versus-gamehost 
-Уточни количество команд и их названия. На одном серваке  может быть только 1 эвент.
-```!start_event количество_команд "название 1;название 2;..."```
-Например,
-```!start_event 5 "Team Red;Team Blue;Team Green;Team Yellow;Team Orange"```
-### Добавь текстовые чаты каждой команде (использовать один раз)
-```!use_default_channels```
-### Настрой символы
-Настрой, какие символы ты хочешь использовать во время эвента. Порядок  символов должен совпадать с порядком команд, когда стратуешь ивент.
-```!set_team_symbols "ксзжо"```
-### Настрой роли
-Если хочешь убрать всех участников из команд, используй эту команду!
-```!clean_up_roles```
-Можно создать опрос, чтобы участники вбрали свои команды. Для этого надо указать Chat ID, куда отправится  сообщение с глосованием. Если  не  знаешь Id чата - нажми правой мышкой, затем - скопировать Chat ID. 
-```!create_teams_poll 1477570759864881294```"""
+**1.Начни ивент в чате #versus-gamehost** 
+Уточни количество команд и их названия. `!start_event количество_команд "название 1;название 2;..."` На одном серваке может быть только 1 эвент. Например, ```!start_event 5 "Team Red;Team Blue;Team Green;Team Yellow;Team Orange"```
+**2.Добавь текстовые чаты каждой команде** (использовать один раз) ```!use_default_channels```
+**3.Настрой символы** Настрой, какие символы ты хочешь использовать во время эвента. Порядок  символов должен совпадать с порядком команд, когда стартуешь ивент. ```!set_team_symbols "ксзжо"```
+**4.Настрой роли** Если хочешь убрать всех участников из команд, используй эту команду! ```!clean_up_roles```
+**5.Выдай роли участникам** Можно создать опрос, чтобы участники выбрали свои команды. Для этого надо в сообщении боту указать Chat ID, куда отправится сообщение с глосованием. Если не знаешь Id чата - нажми правой мышкой, затем - скопировать Chat ID. В примере - канал  #versus-general  ```!create_teams_poll 1477570759864881294```"""
 
 def host_instruction_text_ru_p2():
     return """## Во время игры
-### Отправь данные о дне.
+**1.Отправь данные о дне.**
 Сначала уточни результат дня - "Success" при успехе, "Queue" при поражении от очереди или название команды, из-за которой день был проигран. Затем напиши в кавычках символы, которые настроены для команды. порядок не важен.
-Не забудь, что команда, первая обслужившая своих клиентов, получает один бонус. Добавь им одного клиента в строку с остальными символами: 
-```!send_day_data "Success" "кссжжоооожожож"```
-### Если команда проиграла - исключи ее. Их чат перестанет получать сообщения о конце дня.
-```!exclude_team "Team 1"```
-### Когда команды голосуют или покупают вещи, ты будешь получать сообщения  от бота. 
+Не забудь, что команда, первая обслужившая своих клиентов, получает один бонус. Добавь им одного клиента в строку с остальными символами: ```!send_day_data "Success" "кссжжоооожожож"```
+**2.Если команда проиграла - исключи ее.** Их чат перестанет получать сообщения о конце дня. Их данные останутся  в боте до конца ивента. ```!exclude_team "Team 1"```
+**3.Когда команды голосуют или покупают вещи,** ты будешь получать сообщения от бота. 
 Реагируй на их сообщения с помощью эмодзи, чтобы подтверждать или отклонять запросы от команд. У тебя есть 10 минут на ответ. Если это время заканчивается, то запрос отклоняется автоматически.
-### Если что-то пошло не так - всегда можно поменять данные руками.
-С помощью `!adjust_team_data` и `!set_team_data` можно поменять данные о командах, которые хранятся у бота.
-Можно менять следующие поля: "current_gold" - количество золота, "customers_served_total" - клиентов всего, "failures" - количество провалов.
-Например, `!adjust_team_data "Team Red" current_gold -3` снизит количество золота у Красной команды на 3.
-Или `!set_team_data "Team Blue" current_gold 20` приравняет количество золота у Синих к 20."""
+
+**4.Если что-то пошло не так - всегда можно поменять данные руками.**
+С помощью `!adjust_team_data` и `!set_team_data` можно поменять данные о командах, которые хранятся у бота. Можно менять следующие поля: "current_gold" - количество золота, "customers_served_total" - клиентов всего, "failures" - количество провалов.
+Например, `!adjust_team_data "Team Red" current_gold -3` снизит количество золота у Красной команды на 3.```!adjust_team_data "Team Red" current_gold -3```
+Или `!set_team_data "Team Blue" current_gold 20` приравняет количество золота у Синих к 20.```!set_team_data "Team Blue" current_gold 20```"""
 
 def host_instruction_text_ru_p3():
     return """## Заканчиваем эвент.
-### Посчитай результаты! `!get_game_results`
-### Почисти чатики - `!clear`
+**1.Посчитай результаты!** ```!get_game_results```
+**2.Почисти чатики!** ```!clear```
 Используй команду `!clear` в каждом чатике  команды, чтобы его почистить от сообщений. Работает только в #versus-gamehost и #versus-team<цвет> каналах. Бот не может чистить больше 100 сообщений за раз.
-### Закончи ивент и удали данные в боте: `!stop_event`
-### Это все! Спасибо за проведение ивента =)
-"""
+**3.Закончи ивент** и удали данные в боте: ```!stop_event```
+## Это все! Спасибо за проведение ивента =)"""
 
 # It's also  possible to create event channels in the specified category ```!create_event_channels PrivateEventChannels```
 # For example,
