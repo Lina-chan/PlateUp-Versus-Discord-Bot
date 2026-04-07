@@ -1,4 +1,7 @@
+from typing import Literal, Optional
 import discord
+from discord.ext.commands import Greedy, Context
+from discord import app_commands
 from discord.ext import commands
 import logging
 from dotenv import load_dotenv
@@ -18,7 +21,7 @@ intents.message_content = True
 intents.members = True 
 intents.reactions = True
 
-bot = commands.Bot(command_prefix='!', intents=intents)
+bot = commands.Bot(command_prefix='/',  intents=intents)
 
 host_role = 1478277750593818714 #The role that's allowed to do the setup
 game_host_channel_id = 1485241198376652811
@@ -88,7 +91,7 @@ event_data_template = {
 fields_for_changing_data = ['current_gold', 'customers_served_total', 'failures']
 
 
-@bot.command()
+@bot.hybrid_command()
 @commands.has_role(host_role)
 async def start_event(ctx, number_of_teams : int, team_names : str):
     print("Start!")
@@ -130,7 +133,7 @@ def create_team(_name, _guild):
     pretty_print_df(ongoing_events[_guild]["teams_data"])
     print("Data Added")
 
-@bot.command()
+@bot.hybrid_command()
 @commands.has_role(host_role)
 async def adjust_team_data(ctx, team : str, field : str, amount : int):
     guild = ctx.guild
@@ -150,7 +153,7 @@ async def adjust_team_data(ctx, team : str, field : str, amount : int):
     else:
         await ctx.send(wrong_field(fields_for_changing_data))
 
-@bot.command()
+@bot.hybrid_command()
 @commands.has_role(host_role)
 async def set_team_data(ctx, team : str, field : str, amount : int):
     guild = ctx.guild
@@ -170,7 +173,7 @@ async def set_team_data(ctx, team : str, field : str, amount : int):
     else:
         await ctx.send(wrong_field(fields_for_changing_data))
 
-@bot.command()
+@bot.hybrid_command()
 @commands.has_role(host_role)
 async def clean_up_roles(ctx):
     guild = ctx.guild
@@ -178,10 +181,10 @@ async def clean_up_roles(ctx):
         role = guild.get_role(role_id)
         for member in role.members:
             await member.remove_roles(role)
-            await ctx.send(command_done_text())
+    await ctx.send(command_done_text())
 
 
-@bot.command()
+@bot.hybrid_command()
 @commands.has_role(host_role)
 async def use_default_channels(ctx):
     guild = ctx.guild
@@ -258,7 +261,7 @@ async def create_event_channels(ctx, event_category_name : str):
     ongoing_events[guild]["team_channel_mapping"] = team_channel_mapping
     await ctx.send(command_done_text()) 
 
-@bot.command()
+@bot.hybrid_command()
 @commands.has_role(host_role)
 async def create_teams_poll(ctx, channel_id : int = 1477570759864881294):
     guild = ctx.guild
@@ -285,7 +288,7 @@ async def create_teams_poll(ctx, channel_id : int = 1477570759864881294):
     ongoing_events[guild]["emojis_dict"] = emojis_dict
     await ctx.send(command_done_text())  
 
-@bot.command(description="show instruction how to interract with the bot")
+@bot.hybrid_command(description="show instruction how to interract with the bot")
 async def help_team(ctx):
     current_event = ongoing_events.get(ctx.guild) 
     if current_event == None:
@@ -294,14 +297,14 @@ async def help_team(ctx):
         ctx.send(teams_instruction_text())
     await ctx.send(teams_instruction_text())
 
-@bot.command(description="show host's instruction how to interract with the bot")
+@bot.hybrid_command(description="show host's instruction how to interract with the bot")
 @commands.has_role(host_role)
 async def help_host(ctx):
     await ctx.send(host_instruction_text_p1())
     await ctx.send(host_instruction_text_p2())
     await ctx.send(host_instruction_text_p3())
 
-@bot.command(description="показать инструкцию для хоста на русском")
+@bot.hybrid_command(description="показать инструкцию для хоста на русском")
 @commands.has_role(host_role)
 async def help_host_ru(ctx):
     await ctx.send(host_instruction_text_ru_p1())
@@ -345,7 +348,7 @@ async def on_reaction_remove(reaction, user):
             if role in user.roles:
                 await user.remove_roles(role) 
 
-@bot.command()
+@bot.hybrid_command()
 @commands.has_role(host_role)
 async def set_team_symbols(ctx, symbols_string : str):
     guild = ctx.guild
@@ -365,7 +368,7 @@ async def set_team_symbols(ctx, symbols_string : str):
         message_main_text = message_main_text + voting_text
     await ctx.send(message_main_text)
 
-@bot.command()
+@bot.hybrid_command()
 @commands.has_role(host_role)
 async def exclude_team(ctx, team : str):
     guild = ctx.guild
@@ -380,7 +383,7 @@ async def exclude_team(ctx, team : str):
         current_event['teams_list'].remove(team)
 
 
-@bot.command()
+@bot.hybrid_command()
 @commands.has_role(host_role)
 async def send_day_data(ctx, result :str, symbols_string : str):
     guild = ctx.guild
@@ -447,14 +450,14 @@ async def send_day_data(ctx, result :str, symbols_string : str):
         await ctx.send("Notifications sent! / Сообщения отправлены!")
         await ctx.send(day_total_text(current_event, day_result_ru, day_result_eng, day_number_text))
 
-@bot.command()
+@bot.hybrid_command()
 @commands.has_role(host_role)
 async def clear(ctx):
     if ctx.channel.id == game_host_channel_id or ctx.channel.id in default_text_channels.values(): 
         await ctx.send("On it, boss!")
         await ctx.channel.purge(limit=100)
 
-@bot.command(description="send your team's vote about which card to choose to the host")
+@bot.hybrid_command(description="send your team's vote about which card to choose to the host")
 async def vote(ctx, vote_gold :int, vote_how : str = "None"):
     guild = ctx.guild
     current_event = ongoing_events.get(guild)   
@@ -494,7 +497,7 @@ async def vote(ctx, vote_gold :int, vote_how : str = "None"):
     #else:
         #host_message.delete()
 
-@bot.command(description="send your team's request to buy blueprints")    
+@bot.hybrid_command(description="send your team's request to buy blueprints")    
 async def buy(ctx, buy_gold :int, buy_what : str = "None"):
     guild = ctx.guild
     current_event = ongoing_events.get(guild)   
@@ -558,7 +561,7 @@ async def wait_for_approval_from_host(message, ctx):
             return True
 
 
-@bot.command()
+@bot.hybrid_command()
 @commands.has_role(host_role)
 async def delete_event_channels(ctx):
     guild = ctx.guild
@@ -586,7 +589,7 @@ async def delete_event_channels(ctx):
             print(f"voice chat deleted {team}")
     await ctx.send(command_done_text())
 
-@bot.command()
+@bot.hybrid_command()
 @commands.has_role(host_role)
 async def get_game_results(ctx):
     guild = ctx.guild
@@ -597,7 +600,7 @@ async def get_game_results(ctx):
         return
     await ctx.send(game_result_text(ongoing_events[guild]))   
 
-@bot.command()
+@bot.hybrid_command()
 @commands.has_role(host_role)
 async def stop_event(ctx):
     guild = ctx.guild
@@ -614,7 +617,7 @@ async def stop_event(ctx):
     print("Nothing to stop")
     await ctx.send(no_event_text())
 
-# @bot.command()
+# @bot.hybrid_command()
 # async def become_host(ctx):
 #     role = discord.utils.get(ctx.guild.roles, name=host_role)
 #     if role:
@@ -623,7 +626,7 @@ async def stop_event(ctx):
 #     else:
 #         await ctx.send("Role doesn't exist")
 
-# @bot.command()
+# @bot.hybrid_command()
 # async def hello(ctx):
 #     print("Hello")
 #     await ctx.send(f"Hello {ctx.author.mention} from {ctx.guild}!")
@@ -638,12 +641,49 @@ async def stop_event_error(ctx, error):
     if isinstance(error, commands.MissingRole):
         await ctx.send(no_role_for_command_answer())
 
-@bot.event
-async def on_ready():
-    print(f"{bot.user.name} reporting for duty")
-
 def pretty_print_df(df):
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
         print(df)
+
+@bot.event
+async def on_ready():
+    print(f"{bot.user.name} reporting for duty")
+    await sync
+
+#------ Sync Tree ------
+guild = discord.Object(id=1477569760102449254)
+@bot.command(description="Sync bot commands")
+@commands.guild_only()
+@commands.is_owner()
+async def sync(
+  ctx: Context, guilds: Greedy[discord.Object], spec: Optional[Literal["~", "*", "^"]] = None) -> None:
+    if not guilds:
+        if spec == "~":
+            synced = await ctx.bot.tree.sync(guild=ctx.guild)
+        elif spec == "*":
+            ctx.bot.tree.copy_global_to(guild=ctx.guild)
+            synced = await ctx.bot.tree.sync(guild=ctx.guild)
+        elif spec == "^":
+            ctx.bot.tree.clear_commands(guild=ctx.guild)
+            await ctx.bot.tree.sync(guild=ctx.guild)
+            synced = []
+        else:
+            synced = await ctx.bot.tree.sync()
+
+        await ctx.send(
+            f"Synced {len(synced)} commands {'globally' if spec is None else 'to the current guild.'}"
+        )
+        return
+
+    ret = 0
+    for guild in guilds:
+        try:
+            await ctx.bot.tree.sync(guild=guild)
+        except discord.HTTPException:
+            pass
+        else:
+            ret += 1
+
+    await ctx.send(f"Synced the tree to {ret}/{len(guilds)}.")
 
 bot.run(token, log_handler=handler, log_level=logging.DEBUG)
